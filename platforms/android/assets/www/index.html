@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<!--
+    Copyright (c) 2012-2014 Adobe Systems Incorporated. All rights reserved.
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+          <script type="text/javascript" src="cordova.js"></script>
+        <title>I'm Hungry?</title>
+        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+        <script>
+            var xmlhttp;
+            var posLat;
+            var posLong;
+            
+            window.onload = function()
+            {
+                //document.addEventListener('deviceready', init, false);
+                xmlhttp = new XMLHttpRequest();
+                xmlhttp.onreadystatechange = processResult;
+            }
+
+            function getLocation()
+            {
+                var options = {
+                      enableHighAccuracy: true,
+                      timeout: 5000,
+                      maximumAge: 0
+                };
+                navigator.geolocation.getCurrentPosition(success, failure, options);   
+            }
+            
+            function success(position)
+            {
+                var latitude = position.coords.latitude;
+                var long = position.coords.longitude;
+                var googleURL = "https://maps.googleapis.com/maps/api/place/nearbysearch/xml?key=AIzaSyCCj1I9TlM3xm_QjoAocPt_i3ycSPbmPXs&location=";
+                googleURL += latitude + "," + long;
+                googleURL += "&rankby=distance&keyword=restaurant";
+                posLat = latitude;
+                posLong = long;
+                getRestaurantList(googleURL);                    
+            }
+            
+            function getRestaurantList(URL)
+            {
+                xmlhttp.open("GET", URL, true);
+                xmlhttp.send();
+            }
+            
+            function processResult()
+            {
+                var out="<ul data-role='listview' data-inset='true' id='restList'>"; 
+                
+                if(xmlhttp.readyState == 4 && xmlhttp.status==200)
+                {
+                    var restaurantXML = $.parseXML(xmlhttp.responseText);
+                    var xml = $(restaurantXML);
+                    console.log(xml);
+                    $(xml).find("result").each(function(){
+                        var name = $(this).find('name').text();
+                        var address = $(this).find('vicinity').text();
+                        var rating = $(this).find('rating').text();
+                        var open = $(this).find('opening_hours').find('open_now').text();
+                      //  var lat = $(this).find('geometry').find('location').find('lat').text();
+                      //  var long = $(this).find('geometry').find('location').find('lng').text();
+                       
+                        
+                        //Build output string
+                        out += "<li data-role='list-divider'><h1>";
+                        out += name + "</h1></li>";
+                        out += "<li>" + address;
+                        out += "<p>Google Rating: " + rating + "</p>";
+                        if(open){
+                            out += "<p class='ul-li-aside'>Open Now!</p>";
+                        }
+                        out += "</li>";
+                    });
+                    
+                   
+                }
+                out += "</ul>";
+                document.getElementById('result').innerHTML = "<h1>Restaurants Nearby</h1>";
+                document.getElementById('result').innerHTML = out;
+                $("#restList").listview().listview('refresh');  
+             
+            }
+            
+      
+            function failure(message)
+            {
+                alert("Error:" + message.message);
+            }
+            
+            function clearScreen()
+            {
+                document.getElementById('result').innerHTML = "";
+            }
+        </script>
+        <style>
+        #container  {
+            margin: 5px;   
+        }
+        
+        #btnLocation    {
+            display: none;  
+        }
+        #map-canvas {
+            height: 400px;
+            width: 100%
+        }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <button id="btnGetLocation" onclick="getLocation()">I'm Hungry</button>
+            <button id="btnClear" onclick="clearScreen()">Clear</button>
+            <div id="result"></div>
+            <footer>
+                <img src="pbg.png" alt="Powered By Google" />
+            </footer>
+        </div><!-- container-->
+        
+    </body>
+</html>
